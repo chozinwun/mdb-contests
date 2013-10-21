@@ -94,7 +94,7 @@
 		$end_date = get_post_meta( $post->ID, 'contest_end_date', true );
 		$start_time = get_post_meta( $post->ID, 'contest_start_time', true );
 		$end_time = get_post_meta( $post->ID, 'contest_end_time', true );
-		
+
 		echo "<p><strong>Start Date</strong></p>";
 		echo "<input type=\"date\" name=\"contest_start_date\" value=\"$start_date\" />";	
 		echo "<p><strong>End Date</strong></p>";
@@ -121,6 +121,10 @@
 	function mdb_contestant_attributes_box( $post ) {
 
 		$contest_id = get_post_meta( $post->ID, 'contest_id', true );
+		$birthdate = get_post_meta( $post->ID, 'birthdate', true );
+		$video_url = get_post_meta( $post->ID, 'video_url', true );
+		$city = get_post_meta( $post->ID, 'city', true );
+		$state = get_post_meta( $post->ID, 'state', true );
 
 		$args = array( 'post_type' => 'contest' );
 		$query = new WP_Query( $args );
@@ -129,10 +133,21 @@
 		echo "<select name=\"contest_id\" data-id=\"$contest_id\"><option>--</option>";
 
 		foreach ( $query->posts as $contest ) {
-			echo "<option name=\"" . $contest->ID . "\">" . $contest->post_title . "</option>";
+			echo "<option value=\"" . $contest->ID . "\">" . $contest->post_title . "</option>";
 		}
 
 		echo "</select>";
+
+		/*
+		echo "<p><strong>Birthdate</strong></p>";
+		echo "<input type=\"date\" name=\"birthdate\" value=\"$birthdate\" />";
+
+		echo "<p><strong>Address</strong></p>";
+		echo "<input type=\"text\" name=\"city\" value=\"$city\" placeholder=\"City\" /> <input type=\"text\" name=\"state\" value=\"$state\" placeholder=\"State\" />";		
+
+		echo "<p><strong>Video URL</strong></p>";
+		echo "<input type=\"text\" name=\"video_url\" value=\"$video_url\" />";
+		*/
 	}
 
 	function mdb_save_contest( $post_id ) {
@@ -171,11 +186,89 @@
 
 	}
 
+	function mdb_contest_columns( $columns ) {
+
+		unset(
+			$columns['title'],
+			$columns['date']
+		);
+
+		$new_columns = array(
+			'title' => __('Contest'),
+			'contestants' => __('Contestants'),
+		);
+
+	    return array_merge( $columns, $new_columns );
+	}
+
+	function mdb_custom_contest_column( $column, $post_id ) {
+
+		$contestant_args = array( 
+			'post_type' => 'contestant',
+			'posts_per_page' => -1,
+			'meta_key' => 'contest_id',
+			'meta_value' => $post_id
+		);
+
+		$contestants = new WP_Query( $contestant_args );
+
+	    switch ( $column ) {
+
+	        case 'contestants':	   
+	            echo $contestants->post_count;
+	            break;
+
+	    }
+
+	}
+
+	function mdb_contestant_columns( $columns ) {
+
+		unset(
+			$columns['title'],
+			$columns['date']
+		);
+
+		$new_columns = array(
+			'title' => __('Contestant'),
+			'contest' => __('Contest'),
+		);
+
+	    return array_merge( $columns, $new_columns );
+	}
+
+	function mdb_custom_contestant_column( $column, $post_id ) {
+
+		$contestant_args = array( 
+			'post_type' => 'contestant',
+			'posts_per_page' => -1,
+			'meta_key' => 'contest_id',
+			'meta_value' => $post_id
+		);
+
+		$contestants = new WP_Query( $contestant_args );
+
+	    switch ( $column ) {
+
+	        case 'contest':	   
+	            echo $contestants->post_count;
+	            break;
+
+	    }
+
+	}
+
 	add_action( 'admin_init', 'mdb_contests_admin_init' );
 	add_action( 'init', 'mdb_contests_init' );
 	add_action( 'add_meta_boxes', 'mdb_contest_meta_boxes' );
 	add_action( 'save_post', 'mdb_save_contest' );
 	add_action( 'save_post', 'mdb_save_contestant' );
+
+	add_filter( 'manage_contest_posts_columns' , 'mdb_contest_columns');
+	add_action( 'manage_contest_posts_custom_column' , 'mdb_custom_contest_column', 10, 2 );
+
+	add_filter( 'manage_contestant_posts_columns' , 'mdb_contestant_columns');
+	add_action( 'manage_contestant_posts_custom_column' , 'mdb_custom_contestant_column', 10, 2 );
 
 	// Contestant Information
 	#1 Name (First & Last)
@@ -186,4 +279,5 @@
 	#6 Address (City & State) (Private)
 	#7 E-mail
 	#8 Bio (3-5 sentences) 
+
 ?>
