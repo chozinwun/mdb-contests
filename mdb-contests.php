@@ -36,8 +36,8 @@
 			'has_archive'   => true,
 			'show_in_nav_menus' => true,
 			'rewrite' 			=> array( 'slug' => 'contests' ),
-			'capability_type' => 'post',
-			'publicly_queryable' => false
+			'capability_type' => 'page',
+			'publicly_queryable' => true
 		);
 
 		// Contestant Post Type
@@ -68,7 +68,7 @@
 			'show_in_nav_menus' => true,
 			'rewrite' 			=> array( 'slug' => 'contestants' ),
 			'capability_type' => 'post',
-			'publicly_queryable' => false
+			'publicly_queryable' => true
 		);
 		
 		register_post_type( 'contest', $contest_args );		
@@ -232,6 +232,7 @@
 		$new_columns = array(
 			'title' => __('Contestant'),
 			'contest' => __('Contest'),
+			'date' => __('Date')
 		);
 
 	    return array_merge( $columns, $new_columns );
@@ -239,23 +240,29 @@
 
 	function mdb_custom_contestant_column( $column, $post_id ) {
 
-		$contestant_args = array( 
-			'post_type' => 'contestant',
-			'posts_per_page' => -1,
-			'meta_key' => 'contest_id',
-			'meta_value' => $post_id
-		);
-
-		$contestants = new WP_Query( $contestant_args );
+		$contest_id = get_post_meta( $post_id, 'contest_id', true );
+		$contest = get_post( $contest_id, ARRAY_A );
 
 	    switch ( $column ) {
 
 	        case 'contest':	   
-	            echo $contestants->post_count;
+	            echo $contest['post_title'];
 	            break;
 
 	    }
 
+	}
+
+	function mdb_filter_contest_content( $contest ) {
+
+		if ( locate_template('single-contest.php') == '' ) {
+
+			$contest = $contest . file_get_contents( plugin_dir_path( __FILE__ ) . 'templates/contest-signup.php' );
+			return $contest;
+
+		} 
+
+		return $contest;
 	}
 
 	add_action( 'admin_init', 'mdb_contests_admin_init' );
@@ -269,6 +276,8 @@
 
 	add_filter( 'manage_contestant_posts_columns' , 'mdb_contestant_columns');
 	add_action( 'manage_contestant_posts_custom_column' , 'mdb_custom_contestant_column', 10, 2 );
+
+	add_filter( 'the_content', 'mdb_filter_contest_content' );
 
 	// Contestant Information
 	#1 Name (First & Last)
