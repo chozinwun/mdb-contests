@@ -1,3 +1,7 @@
+<?php
+	$form_html = get_post_meta( $post->ID, 'form_html', true );
+?>
+
 <style>
 	
 	a { cursor: pointer; }
@@ -13,13 +17,12 @@ border-bottom: 1px solid #eee;
 		float: left;
 	}
 
-	.form-creator {
-		display: none;
+	.form-preview {
 		float: right;
 		min-width: 50%;
 	}
 
-	.form-creator li {
+	.form-preview li {
 		padding: 10px;
 	}
 
@@ -40,7 +43,7 @@ border-bottom: 1px solid #eee;
 
 </style>
 
-<div>
+<div id="form-creator">
 	<div class="input-menu">
 		<select class="input-type">
 			<option value="text">Text</option>
@@ -52,8 +55,11 @@ border-bottom: 1px solid #eee;
 		<a class="add-input">Create Field</a>
 	</div>
 
-	<ul class="form-creator">
+	<ul class="form-preview">
 		<h2>Preview Form</h2>
+		<div class="html">
+			<?php echo urldecode($form_html); ?>
+		</div>
 	</ul>
 
 	<div class="input-creator">
@@ -98,6 +104,7 @@ border-bottom: 1px solid #eee;
 	</div>
 
 	<div class="clear"></div>
+	<input id="form-html" type="hidden" name="form_html" value="<?php echo $form_html ?>" />
 </div>
 
 
@@ -107,6 +114,18 @@ border-bottom: 1px solid #eee;
 	
 	$(document).ready(function(){
 		
+		function update_form_html() {
+			var form_html = $('.form-preview .html').html();
+
+			$(form_html).find('a.delete').remove();
+			
+			console.log( 'SITE: ' + $(form_html).clone() );
+
+			$(form_html).find('.active-field').removeClass('active-field');
+
+			$('#form-html').val( escape( form_html ) );
+		}
+
 		$('.add-input').on('click', function(e){
 
 			var input_type = $(this).prev().val();
@@ -122,28 +141,29 @@ border-bottom: 1px solid #eee;
 
 			if ( input_type == 'text' ) {
 
-				$('.form-creator').append('<li class="active-field text"><label>Text</label><input type="text" name="" placeholder="" /></li>');
+				$('.form-preview .html').append('<li class="active-field text"><label>Text</label><input type="text" name="" placeholder="" /></li>');
 
 			} else if ( input_type == 'textarea' ) {
 
-				$('.form-creator').append('<li class="active-field textarea"><label>Text</label><textarea name="" placeholder=""></textarea></li>');
+				$('.form-preview .html').append('<li class="active-field textarea"><label>Text</label><textarea name="" placeholder=""></textarea></li>');
 
 			} else if ( input_type == 'title' ) {
 
-				$('.form-creator').append('<li class="active-field title"><h3>Title</h3></li>');
+				$('.form-preview .html').append('<li class="active-field title"><h3>Title</h3></li>');
 
 			} else if ( input_type == 'dropdown' ) {
 
-				$('.form-creator').append('<li class="active-field dropdown"><label>Text</label><select name=""><option value=""></option></select></li>');				
+				$('.form-preview .html').append('<li class="active-field dropdown"><label>Text</label><select name=""><option value=""></option></select></li>');				
 
 			}
 
 			$('.active-field').append('<a class="delete">Delete</a>');
-			$('.form-creator, .input-creator').show();
-
+			$('.form-preview, .input-creator').show();
+			
+			update_form_html();
 		});
 
-		$('body').on("click", ".form-creator > li:not(.active-field)", function() {
+		$('body').on("click", ".form-preview > li:not(.active-field)", function() {
 
 			$('.active-field').find('.delete').remove();
 			$('.active-field').removeClass('active-field');
@@ -153,6 +173,7 @@ border-bottom: 1px solid #eee;
 			$('#placeholder-change').val( $('.active-field').find('input','textarea').attr('placeholder') );
 			$('#max-length-change').val( $('.active-field').find('input').attr('maxlength') );
 			$('.active-field').append('<a class="delete">Delete</a>');
+			$('.input-creator').show();
 
 			if ( $(this).hasClass('dropdown') ) {
 
@@ -186,6 +207,7 @@ border-bottom: 1px solid #eee;
 		$('body').on("click", ".active-field .delete", function() {
 
 			$(this).closest('.active-field').remove();
+			update_form_html();
 
 		});
 
@@ -226,29 +248,34 @@ border-bottom: 1px solid #eee;
 
 			$('.active-field select option:last-child()').attr('selected','selected');
 			$(this).closest('tr').remove();
+			update_form_html();
 		});
 
 		$('#label-name-change').on('keyup', function(e){
 
 			$('.active-field').find('label').text( $(this).val() );
+			update_form_html();
 
 		});
 
 		$('#placeholder-change').on('keyup', function(e){
 
 			$('.active-field').find('input,textarea').attr( 'placeholder', $(this).val() );
+			update_form_html();
 
 		});
 
 		$('#max-length-change').on('keyup', function(e){
 
 			$('.active-field').find('input').attr( 'maxlength', $(this).val() );
+			update_form_html();
 
 		});
 
 		$('#field-name-change').on('keyup', function(e){
 
 			$('.active-field').find('input,textarea,select').attr( 'name', $(this).val() );
+			update_form_html();
 
 		});
 
@@ -256,6 +283,7 @@ border-bottom: 1px solid #eee;
 
 			var index = $('.option-label').index( this ) + 1; 
 			$('.active-field option:nth-child(' + index + ')').text( $(this).val() ).attr('selected','selected');
+			update_form_html();
 
 		});
 
@@ -263,6 +291,7 @@ border-bottom: 1px solid #eee;
 
 			var index = $('.option-value').index( this ) + 1;
 			$('.active-field option:nth-child(' + index + ')').attr( 'value', $(this).val() ).attr('selected','selected');
+			update_form_html();
 
 		});
 

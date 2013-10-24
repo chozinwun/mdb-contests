@@ -160,6 +160,10 @@
 
 	function mdb_save_contest( $post_id ) {
 
+		if ( isset($_REQUEST['form_html']) ) {
+			update_post_meta( $post_id, 'form_html', $_REQUEST['form_html'] );
+		}
+
 		if ( isset($_REQUEST['contest_start_date']) ) {
 			update_post_meta( $post_id, 'contest_start_date', $_REQUEST['contest_start_date'] );
 		}
