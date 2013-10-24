@@ -82,10 +82,18 @@
 	}
 
 	function mdb_contest_meta_boxes() {
-		add_meta_box( 'mdb-contest', 'Contest Attributes', 'mdb_contest_attributes_box', 'contest', 'normal', 'default' );
-		add_meta_box( 'mdb-contest-fee', 'Entry Fee', 'mdb_contest_entry_fee_box', 'contest', 'normal', 'default' );
+		add_meta_box( 'mdb-contest-form', 'Entry Form', 'mdb_contest_entry_form_box', 'contest', 'normal', 'default' );
+		add_meta_box( 'mdb-contest', 'Contest Attributes', 'mdb_contest_attributes_box', 'contest', 'side', 'default' );
+		add_meta_box( 'mdb-contest-fee', 'Entry Fee', 'mdb_contest_entry_fee_box', 'contest', 'side', 'default' );
 
 		add_meta_box( 'mdb-contestant', 'Contestant Attributes', 'mdb_contestant_attributes_box', 'contestant', 'normal', 'default' );
+	}
+
+	function mdb_contest_entry_form_box( $post ) {
+
+		ob_start();
+		include( plugin_dir_path( __FILE__ ) . 'templates/contest-form-creator.php' );
+		ob_flush();
 	}
 
 	function mdb_contest_attributes_box( $post ) {
