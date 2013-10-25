@@ -5,12 +5,13 @@
 <style>
 	
 	a { cursor: pointer; }
+
 	#input-templates, .input-creator { display: none; }
 
 	.input-menu {
 		display: block;
 		padding: 15px 0;
-border-bottom: 1px solid #eee;
+		border-bottom: 1px solid #eee;
 	}
 
 	.input-creator {
@@ -24,6 +25,7 @@ border-bottom: 1px solid #eee;
 
 	.form-preview li {
 		padding: 10px;
+		cursor: pointer;
 	}
 
 	.active-field {
@@ -115,15 +117,14 @@ border-bottom: 1px solid #eee;
 	$(document).ready(function(){
 		
 		function update_form_html() {
-			var form_html = $('.form-preview .html').html();
+			var form_html = $('.form-preview .html').clone();
 
-			$(form_html).find('a.delete').remove();
-			
-			console.log( 'SITE: ' + $(form_html).clone() );
+			form_html.find('a.delete').remove();
+			form_html.find('.active-field').removeClass('active-field');
 
-			$(form_html).find('.active-field').removeClass('active-field');
+			console.log( 'SITE: ' + form_html.html() );
 
-			$('#form-html').val( escape( form_html ) );
+			$('#form-html').val( escape( form_html.html() ) );
 		}
 
 		$('.add-input').on('click', function(e){
@@ -163,7 +164,7 @@ border-bottom: 1px solid #eee;
 			update_form_html();
 		});
 
-		$('body').on("click", ".form-preview > li:not(.active-field)", function() {
+		$('body').on("click", ".form-preview .html > li:not(.active-field)", function() {
 
 			$('.active-field').find('.delete').remove();
 			$('.active-field').removeClass('active-field');
@@ -202,6 +203,8 @@ border-bottom: 1px solid #eee;
 				});
 			}
 
+			update_form_html();
+
 		});
 
 		$('body').on("click", ".active-field .delete", function() {
@@ -222,6 +225,8 @@ border-bottom: 1px solid #eee;
 
 			$('.active-field').find('select').append('<option></option>');
 			$('.active-field select option:last-child()').attr('selected','selected');
+
+			update_form_html();
 
 		});
 
@@ -249,6 +254,7 @@ border-bottom: 1px solid #eee;
 			$('.active-field select option:last-child()').attr('selected','selected');
 			$(this).closest('tr').remove();
 			update_form_html();
+
 		});
 
 		$('#label-name-change').on('keyup', function(e){

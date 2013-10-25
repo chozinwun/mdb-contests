@@ -160,6 +160,11 @@
 
 	function mdb_save_contest( $post_id ) {
 
+		echo "<pre>";
+		print_r( $_REQUEST );
+		echo "</pre>";
+		#exit;
+
 		if ( isset($_REQUEST['form_html']) ) {
 			update_post_meta( $post_id, 'form_html', $_REQUEST['form_html'] );
 		}
