@@ -333,6 +333,8 @@
 
 		$action = isset($_REQUEST['action']) ? $_REQUEST['action'] : '';
 		$entry_fee_required = get_post_meta( $post->ID, 'entry_fee_required', true);
+		$email_to = isset($_POST['fields']['email']) ? $_POST['fields']['email'] : '';
+		$confirmation_message = get_post_meta( $post->ID, 'confirmation_message', true);
 
 		if (( $post->post_type == 'contest' ) && ( $action == 'contest_submit' )) {
 
@@ -356,7 +358,7 @@
 			// Create post object
 			$contestant = array(
 				'post_type' => 'contestant',
-				'post_title'    => $_POST['fields']['email'],
+				'post_title'    => $email_to,
 				'post_content'  => 'Entered successfully!',
 				'post_status'   => 'publish',
 				'post_author'   => 1
@@ -373,6 +375,29 @@
 				update_post_meta( $contestant_id, 'transaction_id', $payment->id );
 
 			}			
+
+			// Send e-mail response
+			if ( isset($_POST['fields']['email']) ) {
+
+				$subject = $post->post_title . ' Submission';
+
+				$headers = "From: The Summit <thesummit@newjc.org>\r\n";
+				$headers .= "Reply-To: The Summit <thesummit@newjc.org>\r\n";
+				$headers .= "CC: thesummit@newjc.org\r\n";
+				$headers .= "MIME-Version: 1.0\r\n";
+				$headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
+
+				$message = '<html><body>';
+				$message .= "<p>$confirmation_message</p>";
+				$message .= "<h3>Your Entry</h3><ul>";
+				foreach( $_POST['fields'] as $field => $value) {
+					$message .= "<li><strong>" . ucwords(str_replace('_',' ',$field)) . "</strong>: $value</li>";
+				}
+
+				$message .= '</ul></body></html>';
+
+				mail($email_to, $subject, $message, $headers);
+			}
 
 			wp_redirect( '?action=contest_confirm' );
 		}
