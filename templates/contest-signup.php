@@ -48,7 +48,7 @@
 
 <script src="https://checkout.stripe.com/v2/checkout.js"></script>
 <script>
-(function($){
+jQuery(document).ready(function($){
 
 	$('#submit-button').on('click', function(e){
 		
@@ -107,7 +107,7 @@
 
 	});
 
-})(jQuery);
+});
 </script>
 
 <!--<script
