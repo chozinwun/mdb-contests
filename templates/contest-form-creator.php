@@ -53,6 +53,7 @@
 	<div class="input-menu">
 		<select class="input-type">
 			<option value="text">Text</option>
+			<option value="date">Date</option>
 			<option value="textarea">Text Area</option>
 			<option value="dropdown">Dropdown</option>
 			<option value="checkbox">Checkbox</option>
@@ -162,6 +163,10 @@
 
 				$('.form-preview .html').append('<li class="active-field text"><label>Text</label><input type="text" name="" placeholder="" /></li>');
 
+			} else if ( input_type == 'date' ) {
+
+				$('.form-preview .html').append('<li class="active-field date"><label>Date</label><input type="date" name="" placeholder="" /></li>');
+
 			} else if ( input_type == 'textarea' ) {
 
 				$('.form-preview .html').append('<li class="active-field textarea"><label>Text</label><textarea name="" placeholder=""></textarea></li>');
@@ -194,11 +199,17 @@
 			$(this).addClass('active-field');
 
 			// Update variables
-		
 			var brackets = $('.active-field').find('input,textarea,select').attr('name').match(/\[(.*?)\]/);
 
+			if (brackets) {
+				var field_name = brackets[1];
+			} else {
+				var field_name = '';
+			}
+
+			
 			$('#label-name-change').val( $('.active-field').find('label').text() );
-			$('#field-name-change').val( brackets[1] );
+			$('#field-name-change').val( field_name );
 			$('#placeholder-change').val( $('.active-field').find('input,textarea').attr('placeholder') );
 			$('#max-length-change').val( $('.active-field').find('input').attr('maxlength') );
 			$('.active-field').append('<a class="delete">Delete</a>');
