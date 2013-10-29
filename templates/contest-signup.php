@@ -4,6 +4,8 @@
 
 	$entry_fee_required = get_post_meta( $post->ID, 'entry_fee_required', true );
 	$entry_fee_amount = money_format('%i', get_post_meta( $post->ID, 'entry_fee_amount', true));
+	$stripe_key = get_post_meta( $post->ID, 'stripe_key', true );
+	$button_label = get_post_meta( $post->ID, 'button_label', true );
 
 ?>
 
@@ -18,8 +20,6 @@
 .form.signup input[type="checkbox"] ~ label {
 	display: inline;
 }
-
-
 
 </style>
 
@@ -36,12 +36,12 @@
 		
 		<script
 			src="https://checkout.stripe.com/v2/checkout.js" class="stripe-button"
-			data-key="pk_test_YaRgY1QHWL7iLV65s7TJBQqI"
+			data-key="<?php echo $stripe_key ?>"
 			data-amount="<?php echo $entry_fee_amount * 100 ?>"
 			data-name="<?php echo $post->post_title ?>"
 			data-description="1 Submission ($<?php echo $entry_fee_amount ?>)"
 			data-currency="usd"
-			data-label="Submit Video">
+			data-label="<?php echo $button_label ?>">
 		</script>
 
 	<?php else: ?>

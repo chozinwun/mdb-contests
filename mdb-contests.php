@@ -119,12 +119,20 @@
 
 		$require_entry = get_post_meta( $post->ID, 'entry_fee_required', true );
 		$entry_amount = get_post_meta( $post->ID, 'entry_fee_amount', true );
+		$stripe_key = get_post_meta( $post->ID, 'stripe_key', true );
+		$button_label = get_post_meta( $post->ID, 'button_label', true );
 
 		echo "<p><strong>Require Entry Fee?</strong></p>";
 		echo "<select name=\"entry_fee_required\" data-id=\"$require_entry\"><option>--</option><option value=\"1\">Yes</option><option value=\"0\">No</option></select>";
 
 		echo "<p><strong>Entry Fee Amount</strong></p>";
 		echo "<input name=\"entry_fee_amount\" value=\"$entry_amount\" />";
+
+		echo "<p><strong>Stripe API Key</strong></p>";
+		echo "<input name=\"stripe_key\" value=\"$stripe_key\" />";
+
+		echo "<p><strong>Payment Button Label</strong></p>";
+		echo "<input name=\"button_label\" value=\"$button_label\" />";
 	}
 
 	function mdb_contestant_attributes_box( $post ) {
@@ -183,6 +191,14 @@
 
 		if ( isset($_REQUEST['entry_fee_amount']) ) {
 			update_post_meta( $post_id, 'entry_fee_amount', $_REQUEST['entry_fee_amount'] );
+		}
+
+		if ( isset($_REQUEST['stripe_key']) ) {
+			update_post_meta( $post_id, 'stripe_key', $_REQUEST['stripe_key'] );
+		}
+
+		if ( isset($_REQUEST['button_label']) ) {
+			update_post_meta( $post_id, 'button_label', $_REQUEST['button_label'] );
 		}
 
 	}
@@ -300,6 +316,7 @@
 
 				echo "<pre>";
 				print_r( $payment );
+				exit;
 			}
 
 			// Create post object

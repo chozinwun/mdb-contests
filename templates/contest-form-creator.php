@@ -31,7 +31,7 @@
 	.form-preview li label {
 		display: block;
 	}
-	
+
 	.active-field {
 		padding: 9px;
 		border: 1px dashed #CCC;
@@ -85,6 +85,10 @@
 		<div class="for-text for-textarea">
 			<p><strong>Maximum Length</strong></p>
 			<p><input id="max-length-change" type="text" /></p>
+		</div>
+		<div class="for-text for-textarea for-dropdown for-checkbox">
+			<p><strong>Required Field?</strong></p>
+			<p><input id="require-field" type="checkbox" /></p>
 		</div>
 		<div class="for-dropdown">
 			<h2>Dropdown Options</h2>
@@ -304,6 +308,17 @@
 		$('#field-name-change').on('keyup', function(e){
 
 			$('.active-field').find('input,textarea,select').attr( 'name', 'fields[' + $(this).val() + ']' );
+			update_form_html();
+
+		});
+
+		$('#require-field').on('click', function(e){
+
+			if( $(this).is(':checked') ){
+				$('.active-field').find('input,textarea,select').addClass( 'required' );
+			} else {
+				$('.active-field').find('input,textarea,select').removeClass( 'required' );
+			}
 			update_form_html();
 
 		});
