@@ -3,10 +3,12 @@
 	global $post;
 
 	$entry_fee_required = get_post_meta( $post->ID, 'entry_fee_required', true );
-	$entry_fee_amount = money_format('%i', get_post_meta( $post->ID, 'entry_fee_amount', true));
-	$stripe_key = get_post_meta( $post->ID, 'stripe_key', true );
-	$button_label = get_post_meta( $post->ID, 'button_label', true );
+	$entry_fee_amount = money_format('%i', floatval(get_post_meta( $post->ID, 'entry_fee_amount', true)));
+	$stripe_public_key = get_post_meta( $post->ID, 'stripe_public_key', true );
 
+	$button_label = get_post_meta( $post->ID, 'button_label', true );
+	$button_label = !empty($button_label) ? $button_label : 'Enter Contest';
+	$message = (isset($_REQUEST['error'])) ? $_REQUEST['error'] : '';
 ?>
 
 <style>
@@ -21,43 +23,94 @@
 	display: inline;
 }
 
+.form.signup .error {
+	border: 1px solid red;
+}
+
+.form.signup .required {
+	color: inherit;
+}
+
 </style>
 
+<div class="alert"><?php echo $message ?></div>
 
-<form class="form signup" action="?action=contest_submit" method="POST">
+<form class="form signup" action="?action=contest_submit" method="POST" data-get-payment="<?php echo $entry_fee_required ?>">
 	<ul>
 		<?php 
 			global $post;
 			echo urldecode( get_post_meta( $post->ID, 'form_html', true ) );
 		?>
 	</ul>
-	<input type="submit" value="Enter Contest" />
-	<?php if ($entry_fee_required): ?>
+	<input type="hidden" name="stripeToken" />
+	<button id="submit-button"><?php echo $button_label ?></button>
+</form>
+
+<script src="https://checkout.stripe.com/v2/checkout.js"></script>
+<script>
+(function($){
+
+	$('#submit-button').on('click', function(e){
 		
-		<script>
-		$('input[type="submit"]').click(function(){
-				
-			alert('pop'); return false;
-			var token = function(res){
-				var $input = $('<input type=hidden name=stripeToken />').val(res.id);
-				$('form').append($input).submit();
-			};
+		e.preventDefault();
 
-			StripeCheckout.open({
-				key:         'pk_test_YaRgY1QHWL7iLV65s7TJBQqI',
-				address:     true,
-				amount:      5000,
-				currency:    'usd',
-				name:        'Joes Pistachios',
-				description: 'A bag of Pistachios',
-				panelLabel:  'Checkout',
-				token:       token
-			});
+		var form = $('.form.signup');
+		var errors = false;
+		
+		$('.alert').html('');
 
-			return false;
+		$(form).find('.required').each(function(){
+
+			if ( $(this).val() == '' ) {
+				$(this).addClass('error');
+				errors = true;
+
+				$('.alert').html('Some required fields are missing');
+			}
+
 		});
-		</script>
-		<script
+
+		if (!errors) {
+
+			// Show payment screen from Stripe if required
+			if ( $(form).data('get-payment') && ( $(form).find('input[name="stripeToken"]').val() == '' ) ) {
+
+				var token = function(res) {
+					$(form).find('input[name="stripeToken"]').val(res.id);
+					$(form).submit();
+				};
+
+				StripeCheckout.open({
+					key:         '<?php echo $stripe_public_key ?>',
+					amount:      <?php echo $entry_fee_amount * 100 ?>,
+					currency:    'usd',
+					name:        '<?php echo $post->post_title ?>',
+					description: '1 Submission for <?php echo $post->post_title ?>',
+					token:       token
+				});
+
+			// Submit the entry
+			} else {
+
+				$(form).submit();
+
+			}
+
+		}
+
+	});
+
+	// Remove errors when field has a value
+	$('body').on('keyup change', '.error', function() {
+
+		if ( $(this).val() != '' ) $(this).removeClass('error');
+
+	});
+
+})(jQuery);
+</script>
+
+<!--<script
 			src="https://checkout.stripe.com/v2/checkout.js" class="stripe-button"
 			data-key="<?php echo $stripe_key ?>"
 			data-amount="<?php echo $entry_fee_amount * 100 ?>"
@@ -65,15 +118,7 @@
 			data-description="1 Submission ($<?php echo $entry_fee_amount ?>)"
 			data-currency="usd"
 			data-label="<?php echo $button_label ?>">
-		</script>
-
-	<?php else: ?>
-		
-		<input type="submit" value="Enter Contest" />
-
-	<?php endif; ?>
-</form>
-
+		</script>-->
 
 
 <!--<form class="form signup">

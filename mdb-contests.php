@@ -32,7 +32,7 @@
 			'description'   => 'Holds data for contests',
 			'public'        => true,
 			'menu_position' => 5,
-			'supports'      => array( 'title', 'editor', 'excerpt' ),
+			'supports'      => array( 'title', 'editor' ),
 			'has_archive'   => true,
 			'show_in_nav_menus' => true,
 			'rewrite' 			=> array( 'slug' => 'contests' ),
@@ -82,11 +82,21 @@
 	}
 
 	function mdb_contest_meta_boxes() {
+		add_meta_box( 'mdb-contest-confirmation', 'Confirmation Message', 'mdb_contest_confirmation_box', 'contest', 'normal', 'default' );
 		add_meta_box( 'mdb-contest-form', 'Entry Form', 'mdb_contest_entry_form_box', 'contest', 'normal', 'default' );
+
 		add_meta_box( 'mdb-contest', 'Contest Attributes', 'mdb_contest_attributes_box', 'contest', 'side', 'default' );
 		add_meta_box( 'mdb-contest-fee', 'Entry Fee', 'mdb_contest_entry_fee_box', 'contest', 'side', 'default' );
 
 		add_meta_box( 'mdb-contestant', 'Contestant Attributes', 'mdb_contestant_attributes_box', 'contestant', 'normal', 'default' );
+	}
+
+	function mdb_contest_confirmation_box( $post ) {
+
+		$message = get_post_meta( $post->ID, 'confirmation_message', true );
+
+		echo "<textarea name=\"confirmation_message\" style=\"width: 100%\">$message</textarea>";
+
 	}
 
 	function mdb_contest_entry_form_box( $post ) {
@@ -119,7 +129,8 @@
 
 		$require_entry = get_post_meta( $post->ID, 'entry_fee_required', true );
 		$entry_amount = get_post_meta( $post->ID, 'entry_fee_amount', true );
-		$stripe_key = get_post_meta( $post->ID, 'stripe_key', true );
+		$stripe_private_key = get_post_meta( $post->ID, 'stripe_private_key', true );
+		$stripe_public_key = get_post_meta( $post->ID, 'stripe_public_key', true );
 		$button_label = get_post_meta( $post->ID, 'button_label', true );
 
 		echo "<p><strong>Require Entry Fee?</strong></p>";
@@ -128,8 +139,11 @@
 		echo "<p><strong>Entry Fee Amount</strong></p>";
 		echo "<input name=\"entry_fee_amount\" value=\"$entry_amount\" />";
 
-		echo "<p><strong>Stripe API Key</strong></p>";
-		echo "<input name=\"stripe_key\" value=\"$stripe_key\" />";
+		echo "<p><strong>Stripe Secret Key</strong></p>";
+		echo "<input name=\"stripe_private_key\" value=\"$stripe_private_key\" />";
+
+		echo "<p><strong>Stripe Public Key</strong></p>";
+		echo "<input name=\"stripe_public_key\" value=\"$stripe_public_key\" />";
 
 		echo "<p><strong>Payment Button Label</strong></p>";
 		echo "<input name=\"button_label\" value=\"$button_label\" />";
@@ -138,10 +152,7 @@
 	function mdb_contestant_attributes_box( $post ) {
 
 		$contest_id = get_post_meta( $post->ID, 'contest_id', true );
-		$birthdate = get_post_meta( $post->ID, 'birthdate', true );
-		$video_url = get_post_meta( $post->ID, 'video_url', true );
-		$city = get_post_meta( $post->ID, 'city', true );
-		$state = get_post_meta( $post->ID, 'state', true );
+		$fields = get_post_meta( $post->ID, 'fields', true);
 
 		$args = array( 'post_type' => 'contest' );
 		$query = new WP_Query( $args );
@@ -155,14 +166,23 @@
 
 		echo "</select>";
 
+		echo "<p><strong>Entry</strong></p>";
+		echo "<ul>";
+		foreach ( $fields as $field => $value ) {
+			echo "<li><strong>" . ucwords(str_replace('_',' ',$field)) . "</strong>: $value</li>";
+		}
+		echo "</ul>";
+
 	}
 
 	function mdb_save_contest( $post_id ) {
 
-		
-
 		if ( isset($_REQUEST['fields']) ) {
 			update_post_meta( $post_id, 'fields', $_REQUEST['fields'] );
+		}
+
+		if ( isset($_REQUEST['confirmation_message']) ) {
+			update_post_meta( $post_id, 'confirmation_message', $_REQUEST['confirmation_message'] );
 		}
 
 		if ( isset($_REQUEST['form_html']) ) {
@@ -193,8 +213,12 @@
 			update_post_meta( $post_id, 'entry_fee_amount', $_REQUEST['entry_fee_amount'] );
 		}
 
-		if ( isset($_REQUEST['stripe_key']) ) {
-			update_post_meta( $post_id, 'stripe_key', $_REQUEST['stripe_key'] );
+		if ( isset($_REQUEST['stripe_private_key']) ) {
+			update_post_meta( $post_id, 'stripe_private_key', $_REQUEST['stripe_private_key'] );
+		}
+
+		if ( isset($_REQUEST['stripe_public_key']) ) {
+			update_post_meta( $post_id, 'stripe_public_key', $_REQUEST['stripe_public_key'] );
 		}
 
 		if ( isset($_REQUEST['button_label']) ) {
@@ -280,21 +304,22 @@
 
 	function mdb_filter_contest_content( $content ) {
 
-		global $post;
+		global $post;	
 
 		$action = isset($_REQUEST['action']) ? $_REQUEST['action'] : '';
 
 		if (( $post->post_type == 'contest' ) && ( $action == 'contest_confirm' )) {
 
-			return $content;
+			$message = get_post_meta( $post->ID, 'confirmation_message', true);
+			return "<p>$message</p>";
 
-		} else if ( locate_template('single-contest.php') == '' ) {
-
+		} else if ( $post->post_type == 'contest' ) {
+			
 			ob_start();
 			include( plugin_dir_path( __FILE__ ) . 'templates/contest-signup.php' );
 			$content = $content . ob_get_clean();
 			ob_flush();
-
+			
 			return $content;
 
 		} 
@@ -311,12 +336,21 @@
 
 		if (( $post->post_type == 'contest' ) && ( $action == 'contest_submit' )) {
 
+			// Process payment if necessary
 			if ( $entry_fee_required ) {
-				$payment = mdb_submit_payment();
 
-				echo "<pre>";
-				print_r( $payment );
-				exit;
+				$stripe_key = get_post_meta( $post->ID, 'stripe_private_key', true);
+				$entry_amount = get_post_meta( $post->ID, 'entry_fee_amount', true);
+
+				$payment = json_decode(mdb_submit_payment($stripe_key, $entry_amount));
+
+				if ( isset($payment->error) ) {
+
+					wp_redirect( '?error=' . urlencode($payment->error->message) );
+					exit;
+
+				}	
+
 			}
 
 			// Create post object
@@ -334,26 +368,30 @@
 			update_post_meta( $contestant_id, 'contest_id', $post->ID );
 			update_post_meta( $contestant_id, 'entry', $_POST['fields'] );
 
-			#exit;
-			wp_redirect( '?action=contest_confirm' );
+			if ( isset($payment) ) {
 
+				update_post_meta( $contestant_id, 'transaction_id', $payment->id );
+
+			}			
+
+			wp_redirect( '?action=contest_confirm' );
 		}
 
 	}
 
-	function mdb_submit_payment() {
+	function mdb_submit_payment( $stripe_key = '', $amount = 0 ) {
 
 		if ( isset( $_REQUEST['stripeToken']) ) {
 
 			// Get cURL resource
 			$curl = curl_init();
 			$header[] = 'Content-type: application/x-www-form-urlencoded';
-			$header[] = 'Authorization: Bearer sk_test_Qu63f1sCmP01Bn7JEOLw7fuP';
+			$header[] = 'Authorization: Bearer ' . $stripe_key;
 
 			// Set some options - we are passing in a useragent too here
 			curl_setopt_array($curl, array(
 			    CURLOPT_RETURNTRANSFER => 1,
-			    CURLOPT_URL => 'https://api.stripe.com/v1/charges?card=' . $_REQUEST['stripeToken'] . '&amount=1000&currency=usd' ,
+			    CURLOPT_URL => 'https://api.stripe.com/v1/charges?card=' . $_REQUEST['stripeToken'] . '&amount=' . $amount * 100 . '&currency=usd' ,
 				CURLOPT_HTTPHEADER => $header,
 			    CURLOPT_POST => 1,
 			    CURLOPT_POSTFIELDS => array()

@@ -194,11 +194,12 @@
 			$(this).addClass('active-field');
 
 			// Update variables
-			var brackets = $('.active-field').find('input','textarea','select').attr('name').match(/\[(.*?)\]/);
+		
+			var brackets = $('.active-field').find('input,textarea,select').attr('name').match(/\[(.*?)\]/);
 
 			$('#label-name-change').val( $('.active-field').find('label').text() );
 			$('#field-name-change').val( brackets[1] );
-			$('#placeholder-change').val( $('.active-field').find('input','textarea').attr('placeholder') );
+			$('#placeholder-change').val( $('.active-field').find('input,textarea').attr('placeholder') );
 			$('#max-length-change').val( $('.active-field').find('input').attr('maxlength') );
 			$('.active-field').append('<a class="delete">Delete</a>');
 			$('.input-creator').show();
