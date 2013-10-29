@@ -20,7 +20,7 @@
 
 	.form-preview {
 		float: right;
-		min-width: 50%;
+		max-width: 50%;
 	}
 
 	.form-preview li {
@@ -28,6 +28,10 @@
 		cursor: pointer;
 	}
 
+	.form-preview li label {
+		display: block;
+	}
+	
 	.active-field {
 		padding: 9px;
 		border: 1px dashed #CCC;
@@ -66,11 +70,11 @@
 
 	<div class="input-creator">
 		<h2>Field Properties</h2>
-		<div class="for-text for-textarea for-dropdown">
+		<div class="for-text for-textarea for-dropdown for-checkbox">
 			<p><strong>Label Text</strong></p>
 			<p><input id="label-name-change" type="text" /></p>
 		</div>
-		<div class="for-text for-textarea for-dropdown">
+		<div class="for-text for-textarea for-dropdown for-checkbox">
 			<p><strong>Field Name</strong></p>
 			<p><input id="field-name-change" type="text" /></p>
 		</div>
@@ -117,15 +121,25 @@
 	$(document).ready(function(){
 		
 		function update_form_html() {
+
 			var form_html = $('.form-preview .html').clone();
 
 			form_html.find('a.delete').remove();
 			form_html.find('.active-field').removeClass('active-field');
 
-			console.log( 'SITE: ' + form_html.html() );
+			//console.log( 'SITE: ' + form_html.html() );
 
 			$('#form-html').val( escape( form_html.html() ) );
+
 		}
+
+		$('.form-preview .html').sortable({
+
+			stop: function( event, ui ) {
+				update_form_html();
+			}
+
+		});
 
 		$('.add-input').on('click', function(e){
 
@@ -156,6 +170,10 @@
 
 				$('.form-preview .html').append('<li class="active-field dropdown"><label>Text</label><select name=""><option value=""></option></select></li>');				
 
+			} else if ( input_type == 'checkbox' ) {
+
+				$('.form-preview .html').append('<li class="active-field checkbox"><input type="checkbox" name="" /><label>Message</label></li>');				
+
 			}
 
 			$('.active-field').append('<a class="delete">Delete</a>');
@@ -166,11 +184,16 @@
 
 		$('body').on("click", ".form-preview .html > li:not(.active-field)", function() {
 
+			// Set active field
 			$('.active-field').find('.delete').remove();
 			$('.active-field').removeClass('active-field');
 			$(this).addClass('active-field');
+
+			// Update variables
+			var brackets = $('.active-field').find('input','textarea','select').attr('name').match(/\[(.*?)\]/);
+
 			$('#label-name-change').val( $('.active-field').find('label').text() );
-			$('#field-name-change').val( $('.active-field').find('input','textarea','select').attr('name') );
+			$('#field-name-change').val( brackets[1] );
 			$('#placeholder-change').val( $('.active-field').find('input','textarea').attr('placeholder') );
 			$('#max-length-change').val( $('.active-field').find('input').attr('maxlength') );
 			$('.active-field').append('<a class="delete">Delete</a>');
@@ -280,7 +303,7 @@
 
 		$('#field-name-change').on('keyup', function(e){
 
-			$('.active-field').find('input,textarea,select').attr( 'name', $(this).val() );
+			$('.active-field').find('input,textarea,select').attr( 'name', 'fields[' + $(this).val() + ']' );
 			update_form_html();
 
 		});

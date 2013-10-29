@@ -94,6 +94,7 @@
 		ob_start();
 		include( plugin_dir_path( __FILE__ ) . 'templates/contest-form-creator.php' );
 		ob_flush();
+
 	}
 
 	function mdb_contest_attributes_box( $post ) {
@@ -146,24 +147,15 @@
 
 		echo "</select>";
 
-		/*
-		echo "<p><strong>Birthdate</strong></p>";
-		echo "<input type=\"date\" name=\"birthdate\" value=\"$birthdate\" />";
-
-		echo "<p><strong>Address</strong></p>";
-		echo "<input type=\"text\" name=\"city\" value=\"$city\" placeholder=\"City\" /> <input type=\"text\" name=\"state\" value=\"$state\" placeholder=\"State\" />";		
-
-		echo "<p><strong>Video URL</strong></p>";
-		echo "<input type=\"text\" name=\"video_url\" value=\"$video_url\" />";
-		*/
 	}
 
 	function mdb_save_contest( $post_id ) {
 
-		echo "<pre>";
-		print_r( $_REQUEST );
-		echo "</pre>";
-		#exit;
+		
+
+		if ( isset($_REQUEST['fields']) ) {
+			update_post_meta( $post_id, 'fields', $_REQUEST['fields'] );
+		}
 
 		if ( isset($_REQUEST['form_html']) ) {
 			update_post_meta( $post_id, 'form_html', $_REQUEST['form_html'] );
@@ -270,16 +262,94 @@
 
 	}
 
-	function mdb_filter_contest_content( $contest ) {
+	function mdb_filter_contest_content( $content ) {
 
-		if ( locate_template('single-contest.php') == '' ) {
+		global $post;
 
-			$contest = $contest . file_get_contents( plugin_dir_path( __FILE__ ) . 'templates/contest-signup.php' );
-			return $contest;
+		$action = isset($_REQUEST['action']) ? $_REQUEST['action'] : '';
+
+		if (( $post->post_type == 'contest' ) && ( $action == 'contest_confirm' )) {
+
+			return $content;
+
+		} else if ( locate_template('single-contest.php') == '' ) {
+
+			ob_start();
+			include( plugin_dir_path( __FILE__ ) . 'templates/contest-signup.php' );
+			$content = $content . ob_get_clean();
+			ob_flush();
+
+			return $content;
 
 		} 
 
-		return $contest;
+		return $content;
+	}
+
+	function mdb_redirect_submit() {
+
+		global $post;
+
+		$action = isset($_REQUEST['action']) ? $_REQUEST['action'] : '';
+		$entry_fee_required = get_post_meta( $post->ID, 'entry_fee_required', true);
+
+		if (( $post->post_type == 'contest' ) && ( $action == 'contest_submit' )) {
+
+			if ( $entry_fee_required ) {
+				$payment = mdb_submit_payment();
+
+				echo "<pre>";
+				print_r( $payment );
+			}
+
+			// Create post object
+			$contestant = array(
+				'post_type' => 'contestant',
+				'post_title'    => $_POST['fields']['email'],
+				'post_content'  => 'Entered successfully!',
+				'post_status'   => 'publish',
+				'post_author'   => 1
+			);
+
+			// Insert the post into the database
+			$contestant_id = wp_insert_post( $contestant );
+
+			update_post_meta( $contestant_id, 'contest_id', $post->ID );
+			update_post_meta( $contestant_id, 'entry', $_POST['fields'] );
+
+			#exit;
+			wp_redirect( '?action=contest_confirm' );
+
+		}
+
+	}
+
+	function mdb_submit_payment() {
+
+		if ( isset( $_REQUEST['stripeToken']) ) {
+
+			// Get cURL resource
+			$curl = curl_init();
+			$header[] = 'Content-type: application/x-www-form-urlencoded';
+			$header[] = 'Authorization: Bearer sk_test_Qu63f1sCmP01Bn7JEOLw7fuP';
+
+			// Set some options - we are passing in a useragent too here
+			curl_setopt_array($curl, array(
+			    CURLOPT_RETURNTRANSFER => 1,
+			    CURLOPT_URL => 'https://api.stripe.com/v1/charges?card=' . $_REQUEST['stripeToken'] . '&amount=1000&currency=usd' ,
+				CURLOPT_HTTPHEADER => $header,
+			    CURLOPT_POST => 1,
+			    CURLOPT_POSTFIELDS => array()
+			));
+			// Send the request & save response to $resp
+			$resp = curl_exec($curl);
+			// Close request to clear up some resources
+			curl_close($curl);
+
+			return $resp;
+
+		}
+
 	}
 
 	add_action( 'admin_init', 'mdb_contests_admin_init' );
@@ -295,15 +365,6 @@
 	add_action( 'manage_contestant_posts_custom_column' , 'mdb_custom_contestant_column', 10, 2 );
 
 	add_filter( 'the_content', 'mdb_filter_contest_content' );
-
-	// Contestant Information
-	#1 Name (First & Last)
-	#2 Birthdate -> Age
-	#3 Profile picture (optional)
-	#4 Video URL
-	#5 Talent Category (Singing, Dancing, Acting, Other)
-	#6 Address (City & State) (Private)
-	#7 E-mail
-	#8 Bio (3-5 sentences) 
+	add_action( 'template_redirect', 'mdb_redirect_submit' );
 
 ?>

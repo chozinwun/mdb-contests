@@ -1,11 +1,59 @@
+<?php
+	
+	global $post;
+
+	$entry_fee_required = get_post_meta( $post->ID, 'entry_fee_required', true );
+	$entry_fee_amount = money_format('%i', get_post_meta( $post->ID, 'entry_fee_amount', true));
+
+?>
+
 <style>
 
 .form.signup ul { list-style: none; padding-left: 0; }
+.form.signup ul li { margin-left: 0; }
+.form.signup ul label {
+	display: block;
+}
+
+.form.signup input[type="checkbox"] ~ label {
+	display: inline;
+}
+
+
 
 </style>
 
-<h2>Contest Signup</h2>
-<form class="form signup">
+
+<form class="form signup" action="?action=contest_submit" method="POST">
+	<ul>
+		<?php 
+			global $post;
+			echo urldecode( get_post_meta( $post->ID, 'form_html', true ) );
+		?>
+	</ul>
+
+	<?php if ($entry_fee_required): ?>
+		
+		<script
+			src="https://checkout.stripe.com/v2/checkout.js" class="stripe-button"
+			data-key="pk_test_YaRgY1QHWL7iLV65s7TJBQqI"
+			data-amount="<?php echo $entry_fee_amount * 100 ?>"
+			data-name="<?php echo $post->post_title ?>"
+			data-description="1 Submission ($<?php echo $entry_fee_amount ?>)"
+			data-currency="usd"
+			data-label="Submit Video">
+		</script>
+
+	<?php else: ?>
+		
+		<input type="submit" value="Enter Contest" />
+
+	<?php endif; ?>
+</form>
+
+
+
+<!--<form class="form signup">
 	<h3>Personal Information</h3>
 	<ul>
 		<li>
@@ -60,4 +108,4 @@
 			<button>Register</button>
 		</li>
 	</ul>
-</form>
+</form>-->
