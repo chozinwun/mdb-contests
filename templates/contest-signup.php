@@ -31,9 +31,32 @@
 			echo urldecode( get_post_meta( $post->ID, 'form_html', true ) );
 		?>
 	</ul>
-
+	<input type="submit" value="Enter Contest" />
 	<?php if ($entry_fee_required): ?>
 		
+		<script>
+		$('input[type="submit"]').click(function(){
+				
+			alert('pop'); return false;
+			var token = function(res){
+				var $input = $('<input type=hidden name=stripeToken />').val(res.id);
+				$('form').append($input).submit();
+			};
+
+			StripeCheckout.open({
+				key:         'pk_test_YaRgY1QHWL7iLV65s7TJBQqI',
+				address:     true,
+				amount:      5000,
+				currency:    'usd',
+				name:        'Joes Pistachios',
+				description: 'A bag of Pistachios',
+				panelLabel:  'Checkout',
+				token:       token
+			});
+
+			return false;
+		});
+		</script>
 		<script
 			src="https://checkout.stripe.com/v2/checkout.js" class="stripe-button"
 			data-key="<?php echo $stripe_key ?>"
