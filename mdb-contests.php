@@ -73,9 +73,6 @@
 		
 		register_post_type( 'contest', $contest_args );		
 		register_post_type( 'contestant', $contestant_args );
-
-		wp_register_script( 'mdb-contest-js', plugins_url( '/assets/js/mdb-contest.js', __FILE__ ), array('jQuery'), false, true );
-		wp_enqueue_script( 'mdb-contest-js' );
 	}
 
 	function mdb_contests_admin_init() {

@@ -43,7 +43,7 @@
 		?>
 	</ul>
 	<input type="hidden" name="stripeToken" />
-	<button id="submit-button"><?php echo $button_label ?></button>
+	<button id="submit-button" data-stripe-key="<?php echo $stripe_public_key ?>" data-amount="<?php echo $entry_fee_amount ?>" data-name="<?php echo $post->post_title ?>" data-description="1 Submission for <?php echo $post->post_title ?>"><?php echo $button_label ?></button>
 </form>
 
 <script src="https://checkout.stripe.com/v2/checkout.js"></script>
