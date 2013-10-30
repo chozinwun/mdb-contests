@@ -31,6 +31,10 @@
 	color: inherit;
 }
 
+.alert {
+	font-size: 20px;
+	padding-top: 30px; }
+
 </style>
 
 <div class="alert"><?php echo $message ?></div>
