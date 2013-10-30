@@ -13,7 +13,7 @@
 
 <style>
 
-.form.signup ul { list-style: none; padding-left: 0; }
+.form.signup ul { list-style: none; padding-left: 0; margin-left: 0; }
 .form.signup ul li { margin-left: 0; }
 .form.signup ul label {
 	display: block;
